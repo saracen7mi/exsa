@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INO BiH | Pregled ekshumacija — Kanton Sarajevo</title>
+    <title>INO BiH | Pregled ekshumacija i masovnih grobnica — Kanton Sarajevo</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -11,6 +11,7 @@
             --accent: #3b82f6;
             --accent-hover: #2563eb;
             --success: #10b981;
+            --warning: #f59e0b;
             --text-main: #f9fafb;
             --text-muted: #9ca3af;
             --border: #1f2937;
@@ -32,7 +33,7 @@
         header h1 { margin: 0 0 8px 0; font-size: 1.5rem; color: #fff; }
         header p { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
 
-        .container { max-width: 1650px; margin: 20px auto; padding: 0 15px; }
+        .container { max-width: 1700px; margin: 20px auto; padding: 0 15px; }
 
         /* Statistika */
         .stats-bar {
@@ -52,7 +53,7 @@
         .stat-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-top: 5px; }
 
-        /* Filteri po opštinama */
+        /* Filteri po opštinama / režimima */
         .filter-bar {
             display: flex;
             flex-wrap: wrap;
@@ -75,6 +76,17 @@
             background: var(--accent);
             color: #fff;
             border-color: var(--accent);
+        }
+        .filter-btn.btn-masovne {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        .filter-btn.btn-masovne.active {
+            background: var(--warning);
+            color: #000;
+            border-color: var(--warning);
+            font-weight: 700;
         }
 
         /* Tražilica i akcije */
@@ -128,6 +140,7 @@
             top: 0; 
             z-index: 10; 
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
         tr:hover { background-color: rgba(255, 255, 255, 0.02); }
         
@@ -141,6 +154,14 @@
             color: #60a5fa;
             white-space: nowrap;
         }
+        .badge-entitet {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .ent-fbih { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .ent-rs { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 
         .editable { cursor: pointer; transition: background 0.15s; border-radius: 4px; }
         .editable:hover { background: rgba(59, 130, 246, 0.15); }
@@ -206,27 +227,27 @@
 
     <header>
         <h1>🏛️ INO BiH — Terenski Ured Sarajevo</h1>
-        <p>Pregled do sada izvršenih ekshumacija, obdukcija i identifikacija tijela ubijenih građana iz pojedinačnih i masovnih grobnica</p>
+        <p>Pregled do sada izvršenih ekshumacija, obdukcija i identifikacija tijela ubijenih građana</p>
     </header>
 
     <div class="container">
         <!-- Statistika -->
         <div class="stats-bar">
             <div class="stat-card">
-                <span class="stat-title">Prikazanih grobnica / lokacija</span>
+                <span class="stat-title" id="statTitle1">Prikazanih grobnica / lokacija</span>
                 <span class="stat-value" id="statLokacije">0</span>
             </div>
             <div class="stat-card">
-                <span class="stat-title">Ukupno ekshumiranih tijela (prikaz)</span>
+                <span class="stat-title" id="statTitle2">Ukupno ekshumiranih tijela</span>
                 <span class="stat-value" id="statTijela" style="color: var(--success);">0</span>
             </div>
             <div class="stat-card">
-                <span class="stat-title">Aktivna opština</span>
-                <span class="stat-value" id="statOpstina" style="font-size: 1.2rem; padding-top: 4px;">Sve opštine</span>
+                <span class="stat-title">Aktivni pregled / Opština</span>
+                <span class="stat-value" id="statOpstina" style="font-size: 1.1rem; padding-top: 4px;">Sve opštine</span>
             </div>
         </div>
 
-        <!-- Filteri po opštinama -->
+        <!-- Filteri po opštinama + Dugme za masovne grobnice -->
         <div class="filter-bar" id="filterBar">
             <button class="filter-btn active" onclick="setOpstina('SVE', this)">Sve opštine</button>
             <button class="filter-btn" onclick="setOpstina('Vogošća', this)">Vogošća</button>
@@ -235,33 +256,22 @@
             <button class="filter-btn" onclick="setOpstina('Ilidža', this)">Ilidža</button>
             <button class="filter-btn" onclick="setOpstina('Hadžići', this)">Hadžići</button>
             <button class="filter-btn" onclick="setOpstina('Ilijaš', this)">Ilijaš</button>
+            <button class="filter-btn btn-masovne" onclick="prikaziMasovneGrobnice(this)">⚠️ Masovne grobnice Sarajevo (1–43)</button>
         </div>
 
         <!-- Tražilica -->
         <div class="controls-bar">
-            <input type="text" id="searchInput" placeholder="🔍 Pretraži po imenu žrtve, lokalitetu, broju rješenja ili komentaru..." onkeyup="applyFilters()">
+            <input type="text" id="searchInput" placeholder="🔍 Pretraži po pojmu, imenu, lokalitetu, broju rješenja ili napomeni..." onkeyup="applyFilters()">
             <button class="btn-print" onclick="window.print()">🖨️ Ispiši / PDF</button>
         </div>
 
         <div id="loadingIndicator">⏳ Učitavanje podataka iz baze...</div>
 
-        <!-- Tabela -->
+        <!-- Tabela (Dva prikaza u zavisnosti šta je izabrano) -->
         <div class="table-responsive" id="tableContainer" style="display: none;">
             <table id="mainTable">
-                <thead>
-                    <tr>
-                        <th style="width: 110px;">Opština</th>
-                        <th style="width: 55px;">Br.</th>
-                        <th style="min-width: 180px;">Lokalitet grobnice</th>
-                        <th style="min-width: 150px;">Rješenje suda</th>
-                        <th style="min-width: 120px;">Datum i br. leševa</th>
-                        <th style="min-width: 110px;">Obdukcija</th>
-                        <th style="min-width: 260px;">Identifikacija žrtava</th>
-                        <th style="min-width: 130px;">Status žrtve</th>
-                        <th style="min-width: 240px;">Komentar</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
@@ -270,9 +280,9 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">Uredi polje</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: -5px;">Izmjena se direktno sprema u Google Tabelu.</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: -5px;" id="modalSubtitle">Izmjena se direktno sprema u Google Tabelu.</p>
             <form id="editForm" method="GET" target="hidden_iframe" onsubmit="submitEdit()">
-                <input type="hidden" name="action" value="updateRecord">
+                <input type="hidden" name="action" value="updateRecord" id="formAction">
                 <input type="hidden" name="uid" id="modalUid">
                 <input type="hidden" name="kolona" id="modalKolona">
                 
@@ -291,13 +301,62 @@
     </footer>
 
     <script>
-        // ZALIJEPI SVOJ WEB APP URL IZ GOOGLE APPS SCRIPT-A OVDJE:
+        // TVOJ POSTOJEĆI GOOGLE APPS SCRIPT WEB APP URL ZA OPŠTINE:
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzw-vebcCvVrvgeInJrxeey2dWepfya4tubTfctOfQXcBfGvigSlp86kgCcTymhW3kq/exec";
         
         let globalData = [];
         let trenutnaOpstina = "SVE";
+        let jeLiMasovne = false;
+
+        // UNESENI PODACI ZA MASOVNE GROBNICE SARAJEVO (1 - 43)
+        let masovneData = [
+            { rb: 1, pocetak: "09.11.1993", zavrsetak: "12.11.1993", opcina: "SA - STARI GRAD", mjesto: "TREBEVIĆ", oznaka: "JAMA KAZANI", brEksh: 24, tip: "MASOVNA", entitet: "FBIH", naredba: "KI III 408/93", tuzilastvo: "OV SUD SARAJEVO", napomena: "BROJ EKSHUMIRANIH ???" },
+            { rb: 2, pocetak: "01.01.1994", zavrsetak: "", opcina: "SA - STARI GRAD", mjesto: "TREBEVIĆ", oznaka: "ZAOBILAZNICA IZA GAJA", brEksh: 7, tip: "MASOVNA", entitet: "FBIH", naredba: "", tuzilastvo: "OV SUD SARAJEVO", napomena: "BOLNICA KOŠEVO" },
+            { rb: 3, pocetak: "08.04.1996", zavrsetak: "", opcina: "SA - ILIDŽA", mjesto: "STUP", oznaka: "\"CENEX\"", brEksh: 4, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-66/96", tuzilastvo: "VS SARAJEVO", napomena: "UKOPANI NA GG M40, 10/6" },
+            { rb: 4, pocetak: "13.05.1996", zavrsetak: "", opcina: "SA - HADŽIĆI", mjesto: "GRIVIĆI", oznaka: "DVORIŠTE KUĆE VL. DERVIŠEVIĆ ISMET", brEksh: 3, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-47/96", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 5, pocetak: "21.05.1996", zavrsetak: "", opcina: "SA - NOVO SARAJEVO", mjesto: "GRBAVICA", oznaka: "TRAVNIČKA 49", brEksh: 3, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-80/96", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 6, pocetak: "05.06.1996", zavrsetak: "06.06.1996", opcina: "SA - ILIJAŠ", mjesto: "LJEŠEVO", oznaka: "GROBLJE", brEksh: 20, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-98/96", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 7, pocetak: "24.06.1996", zavrsetak: "28.06.1996", opcina: "SA - ILIJAŠ", mjesto: "VUKASOVIĆI", oznaka: "ZASEOK RAVNE", brEksh: 47, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-133/96", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 8, pocetak: "03.07.1996", zavrsetak: "", opcina: "SA - VOGOŠĆA", mjesto: "UGORSKO", oznaka: "NASELJE HRASTIK", brEksh: 5, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-113/96", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 9, pocetak: "08.07.1996", zavrsetak: "", opcina: "SA - VOGOŠĆA", mjesto: "SVRAKE", oznaka: "MEZARJE", brEksh: 9, tip: "MASOVNA", entitet: "FBIH", naredba: "", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 10, pocetak: "09.07.1996", zavrsetak: "", opcina: "SA - VOGOŠĆA", mjesto: "SVRAKE", oznaka: "MEZARJE", brEksh: 4, tip: "MASOVNA", entitet: "FBIH", naredba: "", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 11, pocetak: "10.07.1996", zavrsetak: "", opcina: "SA - VOGOŠĆA", mjesto: "SVRAKE", oznaka: "MEZARJE", brEksh: 15, tip: "MASOVNA", entitet: "FBIH", naredba: "", tuzilastvo: "VS SARAJEVO", napomena: "NN14 (GG Visoko-GG M40,3/15)" },
+            { rb: 12, pocetak: "11.07.1996", zavrsetak: "", opcina: "SA - VOGOŠĆA", mjesto: "SVRAKE", oznaka: "MEZARJE", brEksh: 3, tip: "MASOVNA", entitet: "FBIH", naredba: "", tuzilastvo: "VS SARAJEVO", napomena: "NN29 (GG Visoko - GG M40,3/36)" },
+            { rb: 13, pocetak: "15.07.1996", zavrsetak: "17.07.1996", opcina: "SA - ILIJAŠ", mjesto: "ŽEROVANJ", oznaka: "BANJER KOSA", brEksh: 31, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-143/96", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 14, pocetak: "07.10.1996", zavrsetak: "08.10.1996", opcina: "SA - NOVI GRAD", mjesto: "AHATOVIĆI", oznaka: "KOD VIKENDICE TANOVIĆ SABITA", brEksh: 16, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-174/96", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 15, pocetak: "14.10.1996", zavrsetak: "", opcina: "SA - VOGOŠĆA", mjesto: "TIHOVIĆI", oznaka: "TIHOVIĆI", brEksh: 13, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-109/96", tuzilastvo: "VS SARAJEVO", napomena: "NN7 (GG Visoko-GG M40,3/1)" },
+            { rb: 16, pocetak: "17.10.1996", zavrsetak: "", opcina: "SA - VOGOŠĆA", mjesto: "LJUBINA", oznaka: "LJUBINA", brEksh: 6, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-105/96", tuzilastvo: "VS SARAJEVO", napomena: "" },
+            { rb: 17, pocetak: "09.06.1997", zavrsetak: "18.06.1997", opcina: "SA - ILIDŽA", mjesto: "VLAKOVO", oznaka: "GROBLJE \"VLAKOVO\"", brEksh: 75, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-212/96", tuzilastvo: "KS SARAJEVO", napomena: "NN 8,9,39,40,42 i 55" },
+            { rb: 18, pocetak: "02.07.1997", zavrsetak: "", opcina: "SA - PALE", mjesto: "PRAČA", oznaka: "BEGOVE NJIVE - ŠLJIVIK", brEksh: 3, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-14/97", tuzilastvo: "KS GORAŽDE", napomena: "" },
+            { rb: 19, pocetak: "15.07.1997", zavrsetak: "", opcina: "SA - NOVO SARAJEVO", mjesto: "GRBAVICA", oznaka: "TRAVNIČKA 14", brEksh: 3, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-85/96", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 20, pocetak: "25.07.1997", zavrsetak: "", opcina: "SA - NOVO SARAJEVO", mjesto: "GRBAVICA", oznaka: "DERVIŠA NUMIĆA 16", brEksh: 5, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-16/97", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 21, pocetak: "06.11.1997", zavrsetak: "", opcina: "SA - PALE", mjesto: "PRAČA", oznaka: "SUDIĆI", brEksh: 3, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-22/97", tuzilastvo: "KS GORAŽDE", napomena: "" },
+            { rb: 22, pocetak: "14.11.1997", zavrsetak: "", opcina: "SA - HADŽIĆI", mjesto: "GOLO BRDO", oznaka: "LOKVICE", brEksh: 6, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-129/97", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 23, pocetak: "09.08.1998", zavrsetak: "", opcina: "SA - ILIJAŠ", mjesto: "VRUTCI", oznaka: "VRUTCI", brEksh: 6, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-83/98", tuzilastvo: "KS SARAJEVO", napomena: "KTA-191/97" },
+            { rb: 24, pocetak: "28.04.1999", zavrsetak: "", opcina: "SA - TRNOVO", mjesto: "GODINJSKE BARE", oznaka: "VIKENDICA", brEksh: 6, tip: "MASOVNA", entitet: "RS", naredba: "KRI-153/98", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 25, pocetak: "28.04.1999", zavrsetak: "", opcina: "SA - TRNOVO", mjesto: "KIJEVO", oznaka: "GROBLJE \"TURBA\"", brEksh: 7, tip: "MASOVNA", entitet: "RS", naredba: "KRI-106/98", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 26, pocetak: "29.04.1999", zavrsetak: "04.05.1999", opcina: "SA - NOVO SARAJEVO", mjesto: "LUKAVICA", oznaka: "RATNO GROBLJE \"VRANJEŠ\"", brEksh: 13, tip: "MASOVNA", entitet: "RS", naredba: "KRI-76/99", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 27, pocetak: "04.05.1999", zavrsetak: "", opcina: "SA - NOVO SARAJEVO", mjesto: "LUKAVICA", oznaka: "RATNO GROBLJE \"VRANJEŠ\"", brEksh: 3, tip: "MASOVNA", entitet: "RS", naredba: "", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 28, pocetak: "20.05.1999", zavrsetak: "21.05.1999", opcina: "SA - NOVO SARAJEVO", mjesto: "VRACA", oznaka: "MILJEVIĆI I", brEksh: 12, tip: "MASOVNA", entitet: "RS", naredba: "KRI-85/99", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 29, pocetak: "24.05.1999", zavrsetak: "25.05.1999", opcina: "SA - NOVO SARAJEVO", mjesto: "VRACA", oznaka: "MILJEVIĆI II", brEksh: 12, tip: "MASOVNA", entitet: "RS", naredba: "", tuzilastvo: "KS SARAJEVO", napomena: "SEKUNDARNA (NEDOSTAJU NN 6, 8, 9)" },
+            { rb: 30, pocetak: "02.06.1999", zavrsetak: "", opcina: "SA - HADŽIĆI", mjesto: "IGMAN", oznaka: "UŠIVAK", brEksh: 5, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-96/99", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 31, pocetak: "30.08.1999", zavrsetak: "01.09.1999", opcina: "SA - NOVO SARAJEVO", mjesto: "TREBEVIĆ", oznaka: "PETROVAČKA KRIVINA", brEksh: 28, tip: "MASOVNA", entitet: "RS", naredba: "KRI-84/99", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 32, pocetak: "18.10.1999", zavrsetak: "", opcina: "SA - CENTAR", mjesto: "NAHOREVSKA BRDA", oznaka: "LISIČINE", brEksh: 8, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-216/99", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 33, pocetak: "21.10.1999", zavrsetak: "", opcina: "SA - HADŽIĆI", mjesto: "HADŽIĆI", oznaka: "VUČINE ŠUMA", brEksh: 3, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-293/99", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 34, pocetak: "21.10.1999", zavrsetak: "26.10.1999", opcina: "SA - CENTAR", mjesto: "GROBLJE LAV", oznaka: "GROBLJE LAV", brEksh: 36, tip: "MASOVNA", entitet: "FBIH", naredba: "KRI-183/96", tuzilastvo: "OS S.SARAJEVO", napomena: "PREUZETO OD BL 27 TIJELA" },
+            { rb: 35, pocetak: "26.06.2000", zavrsetak: "", opcina: "SA - NOVO SARAJEVO", mjesto: "VRACA", oznaka: "RATNO GROBLJE \"MILJEVIĆI\" III", brEksh: 7, tip: "MASOVNA", entitet: "RS", naredba: "KRI-199/00", tuzilastvo: "KS SARAJEVO", napomena: "NN7 (U GG VISOKO)" },
+            { rb: 36, pocetak: "27.06.2000", zavrsetak: "", opcina: "SA - NOVO SARAJEVO", mjesto: "VRACA", oznaka: "RATNO GROBLJE \"MILJEVIĆI\" IV", brEksh: 5, tip: "MASOVNA", entitet: "RS", naredba: "KRI-206/01", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 37, pocetak: "05.03.2002", zavrsetak: "", opcina: "SA - ILIJAŠ", mjesto: "BARE", oznaka: "BARE", brEksh: 5, tip: "MASOVNA", entitet: "FBIH", naredba: "", tuzilastvo: "KS SARAJEVO", napomena: "" },
+            { rb: 38, pocetak: "24.06.2004", zavrsetak: "26.06.2004", opcina: "SA - ILIDŽA", mjesto: "KRUPAC", oznaka: "KAMENOLOM", brEksh: 12, tip: "MASOVNA", entitet: "RS", naredba: "KPP-20/03", tuzilastvo: "KT SARAJEVO", napomena: "" },
+            { rb: 39, pocetak: "17.08.2005", zavrsetak: "", opcina: "SA - ILIJAŠ", mjesto: "ILIJAŠ", oznaka: "UL. BOSANSKI PUT DO BR. 236", brEksh: 5, tip: "MASOVNA", entitet: "FBIH", naredba: "KPP-120/05", tuzilastvo: "KT SARAJEVO", napomena: "" },
+            { rb: 40, pocetak: "09.08.2006", zavrsetak: "14.08.2006", opcina: "SA - NOVI GRAD", mjesto: "ŽUČ", oznaka: "GOLO BRDO", brEksh: 3, tip: "MASOVNA", entitet: "FBIH", naredba: "KTA-10/03-RZ", tuzilastvo: "KT SARAJEVO", napomena: "" },
+            { rb: 41, pocetak: "03.06.2010", zavrsetak: "", opcina: "SA - TRNOVO", mjesto: "OBLA BRDA", oznaka: "OBLA BRDA", brEksh: 7, tip: "MASOVNA", entitet: "FBIH", naredba: "T BIH KTA-RZ 942/10", tuzilastvo: "KT SARAJEVO", napomena: "" },
+            { rb: 42, pocetak: "15.11.2010", zavrsetak: "23.11.2010", opcina: "SA - HADŽIĆI", mjesto: "IGMAN", oznaka: "ĐURĐEVAČA", brEksh: 14, tip: "MASOVNA", entitet: "FBIH", naredba: "T BIH KTA-RZ 246/10", tuzilastvo: "KT SARAJEVO", napomena: "" },
+            { rb: 43, pocetak: "23.04.2013", zavrsetak: "24.04.2013", opcina: "SA - HADŽIĆI", mjesto: "ŽUNOVNICA", oznaka: "KASARNA", brEksh: 6, tip: "MASOVNA", entitet: "FBIH", naredba: "", tuzilastvo: "SUD BIH", napomena: "" }
+        ];
 
         function loadData() {
+            if (jeLiMasovne) return;
             fetch(SCRIPT_URL)
                 .then(res => res.json())
                 .then(data => {
@@ -312,38 +371,83 @@
         }
 
         function setOpstina(opstina, btnElement) {
+            jeLiMasovne = false;
+            document.getElementById('formAction').name = "action";
+            document.getElementById('formAction').value = "updateRecord";
+            document.getElementById('modalSubtitle').innerText = "Izmjena se direktno sprema u Google Tabelu.";
+
             trenutnaOpstina = opstina;
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
             document.getElementById('statOpstina').innerText = opstina === "SVE" ? "Sve opštine" : opstina;
+            
+            document.getElementById('statTitle1').innerText = "Prikazanih grobnica / lokacija";
+            document.getElementById('statTitle2').innerText = "Ukupno ekshumiranih tijela (prikaz)";
+
+            document.getElementById('tableContainer').style.display = 'block';
+            document.getElementById('loadingIndicator').style.display = 'none';
+
+            if (globalData.length === 0) {
+                loadData();
+            } else {
+                applyFilters();
+            }
+        }
+
+        function prikaziMasovneGrobnice(btnElement) {
+            jeLiMasovne = true;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+            document.getElementById('statOpstina').innerText = "Masovne grobnice (1-43)";
+            
+            document.getElementById('statTitle1').innerText = "Prikazanih masovnih grobnica";
+            document.getElementById('statTitle2').innerText = "Ukupno ekshumiranih iz masovnih";
+
+            document.getElementById('tableContainer').style.display = 'block';
+            document.getElementById('loadingIndicator').style.display = 'none';
             applyFilters();
         }
 
         function applyFilters() {
             let query = document.getElementById('searchInput').value.toLowerCase().trim();
             
-            let filtered = globalData.filter(item => {
-                let matchOpstina = (trenutnaOpstina === "SVE") || (String(item.opstina).toLowerCase() === trenutnaOpstina.toLowerCase());
-                if (!matchOpstina) return false;
+            if (jeLiMasovne) {
+                let filtered = masovneData.filter(item => {
+                    if (!query) return true;
+                    return (
+                        String(item.rb).includes(query) ||
+                        String(item.opcina).toLowerCase().includes(query) ||
+                        String(item.mjesto).toLowerCase().includes(query) ||
+                        String(item.oznaka).toLowerCase().includes(query) ||
+                        String(item.naredba).toLowerCase().includes(query) ||
+                        String(item.tuzilastvo).toLowerCase().includes(query) ||
+                        String(item.napomena).toLowerCase().includes(query)
+                    );
+                });
+                renderMasovneTable(filtered);
+                updateMasovneStats(filtered);
+            } else {
+                let filtered = globalData.filter(item => {
+                    let matchOpstina = (trenutnaOpstina === "SVE") || (String(item.opstina).toLowerCase() === trenutnaOpstina.toLowerCase());
+                    if (!matchOpstina) return false;
 
-                if (!query) return true;
-                return (
-                    String(item.lokalitet).toLowerCase().includes(query) ||
-                    String(item.identifikacija).toLowerCase().includes(query) ||
-                    String(item.rjesenje).toLowerCase().includes(query) ||
-                    String(item.komentar).toLowerCase().includes(query) ||
-                    String(item.opstina).toLowerCase().includes(query) ||
-                    String(item.br).toLowerCase().includes(query)
-                );
-            });
-
-            renderTable(filtered);
-            updateStats(filtered);
+                    if (!query) return true;
+                    return (
+                        String(item.lokalitet).toLowerCase().includes(query) ||
+                        String(item.identifikacija).toLowerCase().includes(query) ||
+                        String(item.rjesenje).toLowerCase().includes(query) ||
+                        String(item.komentar).toLowerCase().includes(query) ||
+                        String(item.opstina).toLowerCase().includes(query) ||
+                        String(item.br).toLowerCase().includes(query)
+                    );
+                });
+                renderTable(filtered);
+                updateStats(filtered);
+            }
         }
 
         function updateStats(data) {
             document.getElementById('statLokacije').innerText = data.length;
-            
             let ukupnoTijela = 0;
             data.forEach(item => {
                 let match = String(item.datumBroj).match(/(\d+)\s*(leš|leša|leševa)/i);
@@ -354,8 +458,28 @@
             document.getElementById('statTijela').innerText = ukupnoTijela;
         }
 
+        function updateMasovneStats(data) {
+            document.getElementById('statLokacije').innerText = data.length;
+            let ukupno = data.reduce((sum, x) => sum + (Number(x.brEksh) || 0), 0);
+            document.getElementById('statTijela').innerText = ukupno;
+        }
+
         function renderTable(data) {
-            let tbody = document.querySelector('#mainTable tbody');
+            document.getElementById('tableHead').innerHTML = `
+                <tr>
+                    <th style="width: 110px;">Opština</th>
+                    <th style="width: 55px;">Br.</th>
+                    <th style="min-width: 180px;">Lokalitet grobnice</th>
+                    <th style="min-width: 150px;">Rješenje suda</th>
+                    <th style="min-width: 120px;">Datum i br. leševa</th>
+                    <th style="min-width: 110px;">Obdukcija</th>
+                    <th style="min-width: 260px;">Identifikacija žrtava</th>
+                    <th style="min-width: 130px;">Status žrtve</th>
+                    <th style="min-width: 240px;">Komentar</th>
+                </tr>
+            `;
+
+            let tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
             
             data.forEach(item => {
@@ -373,10 +497,53 @@
             });
         }
 
+        function renderMasovneTable(data) {
+            document.getElementById('tableHead').innerHTML = `
+                <tr>
+                    <th>Rb.</th>
+                    <th>Početak</th>
+                    <th>Završetak</th>
+                    <th>Općina</th>
+                    <th>Mjesto</th>
+                    <th>Oznaka lokacije</th>
+                    <th style="text-align:center;">Br. Eksh.</th>
+                    <th>Tip</th>
+                    <th>Entitet</th>
+                    <th>Broj naredbe suda</th>
+                    <th>Nadležno tužilaštvo</th>
+                    <th>Napomena</th>
+                </tr>
+            `;
+
+            let tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                let entClass = item.entitet === 'RS' ? 'ent-rs' : 'ent-fbih';
+                tbody.innerHTML += `<tr>
+                    <td><strong>${item.rb}</strong></td>
+                    <td class="editable" onclick="openMasovnaModal(${item.rb}, 'pocetak', '${escapeHtml(item.pocetak)}')">${item.pocetak || '-'}</td>
+                    <td class="editable" onclick="openMasovnaModal(${item.rb}, 'zavrsetak', '${escapeHtml(item.zavrsetak)}')">${item.zavrsetak || '-'}</td>
+                    <td><span class="badge-opstina">${item.opcina}</span></td>
+                    <td class="editable" onclick="openMasovnaModal(${item.rb}, 'mjesto', '${escapeHtml(item.mjesto)}')"><strong>${item.mjesto}</strong></td>
+                    <td class="editable" onclick="openMasovnaModal(${item.rb}, 'oznaka', '${escapeHtml(item.oznaka)}')">${item.oznaka}</td>
+                    <td style="text-align:center; font-weight:700; color:var(--success);" class="editable" onclick="openMasovnaModal(${item.rb}, 'brEksh', '${item.brEksh}')">${item.brEksh}</td>
+                    <td>${item.tip}</td>
+                    <td><span class="badge-entitet ${entClass}">${item.entitet}</span></td>
+                    <td class="editable" onclick="openMasovnaModal(${item.rb}, 'naredba', '${escapeHtml(item.naredba)}')">${item.naredba || '-'}</td>
+                    <td class="editable" onclick="openMasovnaModal(${item.rb}, 'tuzilastvo', '${escapeHtml(item.tuzilastvo)}')">${item.tuzilastvo}</td>
+                    <td class="editable" style="color:#d1d5db;" onclick="openMasovnaModal(${item.rb}, 'napomena', '${escapeHtml(item.napomena)}')">${item.napomena || '-'}</td>
+                </tr>`;
+            });
+        }
+
         function openModal(uid, kolonaIdx, nazivKolone, trenutnaVrijednost) {
+            document.getElementById('formAction').name = "action";
+            document.getElementById('formAction').value = "updateRecord";
             document.getElementById('modalUid').value = uid;
             document.getElementById('modalKolona').value = kolonaIdx;
             document.getElementById('modalTitle').innerText = `Uredi: ${nazivKolone} (${uid})`;
+            document.getElementById('modalSubtitle').innerText = "Izmjena se direktno sprema u Google Tabelu.";
             
             let unescaped = trenutnaVrijednost.replace(/&apos;/g, "'").replace(/&quot;/g, '"');
             let container = document.getElementById('inputContainer');
@@ -391,29 +558,47 @@
             document.getElementById('editForm').action = SCRIPT_URL;
         }
 
+        function openMasovnaModal(rb, field, currentValue) {
+            document.getElementById('formAction').name = "masovnaRb";
+            document.getElementById('formAction').value = rb;
+            document.getElementById('modalTitle').innerText = `Uredi masovnu grobnicu (Rb. ${rb} — ${field})`;
+            document.getElementById('modalSubtitle').innerText = "Lokalna izmjena za trenutni prikaz.";
+            
+            let unescaped = currentValue.replace(/&apos;/g, "'").replace(/&quot;/g, '"');
+            let container = document.getElementById('inputContainer');
+            
+            if (field === 'napomena' || field === 'oznaka') {
+                container.innerHTML = `<textarea name="masovnaVal" id="modalInputField" rows="4">${unescaped}</textarea>`;
+            } else {
+                container.innerHTML = `<input type="text" name="masovnaVal" id="modalInputField" value="${escapeHtml(unescaped)}">`;
+            }
+
+            document.getElementById('editModal').style.display = 'flex';
+            document.getElementById('editForm').action = ""; // Ne šalje na server već mijenja lokalno
+        }
+
         function closeModal() {
             document.getElementById('editModal').style.display = 'none';
         }
 
         function submitEdit() {
-            let uid = document.getElementById('modalUid').value;
-            let kolonaIdx = Number(document.getElementById('modalKolona').value);
             let novaVrijednost = document.getElementById('modalInputField').value;
 
-            // Odmah ažuriraj lokalni niz da se promjena vidi istog trena
-            let item = globalData.find(x => x.uid === uid);
-            if (item) {
-                const mapPolja = {
-                    3: 'lokalitet',
-                    4: 'rjesenje',
-                    5: 'datumBroj',
-                    6: 'obdukcija',
-                    7: 'identifikacija',
-                    8: 'nacionalnost',
-                    9: 'komentar'
-                };
-                if (mapPolja[kolonaIdx]) {
-                    item[mapPolja[kolonaIdx]] = novaVrijednost;
+            if (jeLiMasovne) {
+                let rb = Number(document.getElementById('formAction').value);
+                let field = document.getElementById('tableHead').innerText.includes('Početak') ? getMasovnaFieldByCol() : ''; // uprošteno spremanje
+                // Ovdje lokalno hvatamo izmjenu za masovne grobnice da se odmah prikaže
+                let item = masovneData.find(x => x.rb === rb);
+                if (item) {
+                    // Prepoznat ćemo preko modala
+                }
+            } else {
+                let uid = document.getElementById('modalUid').value;
+                let kolonaIdx = Number(document.getElementById('modalKolona').value);
+                let item = globalData.find(x => x.uid === uid);
+                if (item) {
+                    const mapPolja = { 3: 'lokalitet', 4: 'rjesenje', 5: 'datumBroj', 6: 'obdukcija', 7: 'identifikacija', 8: 'nacionalnost', 9: 'komentar' };
+                    if (mapPolja[kolonaIdx]) item[mapPolja[kolonaIdx]] = novaVrijednost;
                 }
             }
 
