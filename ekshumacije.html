@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INO BiH | Pregled ekshumacija — Kanton Sarajevo</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #111827;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border: #1f2937;
+        }
+        * { box-sizing: border-box; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        }
+        header { 
+            background: linear-gradient(180deg, #1f2937 0%, #111827 100%); 
+            border-bottom: 1px solid var(--border); 
+            padding: 25px 20px; 
+            text-align: center; 
+        }
+        header h1 { margin: 0 0 8px 0; font-size: 1.5rem; color: #fff; }
+        header p { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
+
+        .container { max-width: 1650px; margin: 20px auto; padding: 0 15px; }
+
+        /* Statistika */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-top: 5px; }
+
+        /* Filteri po opštinama */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .filter-btn {
+            background: var(--card-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { border-color: var(--accent); color: #fff; }
+        .filter-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        /* Tražilica i akcije */
+        .controls-bar { 
+            margin-bottom: 20px; 
+            display: flex; 
+            gap: 12px; 
+            flex-wrap: wrap;
+        }
+        .controls-bar input { 
+            flex: 1;
+            min-width: 280px;
+            padding: 12px 16px; 
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            color: white; 
+            border-radius: 8px; 
+            font-size: 0.95rem; 
+        }
+        .controls-bar input:focus { outline: none; border-color: var(--accent); }
+        
+        .btn-print {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .btn-print:hover { background: rgba(16, 185, 129, 0.25); }
+
+        /* Tabela */
+        .table-responsive { 
+            overflow-x: auto; 
+            max-height: 720px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            background: var(--card-bg); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left; }
+        th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+        th { 
+            color: var(--text-muted); 
+            background-color: #1a2332; 
+            text-transform: uppercase; 
+            font-size: 0.72rem; 
+            position: sticky; 
+            top: 0; 
+            z-index: 10; 
+            letter-spacing: 0.5px;
+        }
+        tr:hover { background-color: rgba(255, 255, 255, 0.02); }
+        
+        .badge-opstina {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            white-space: nowrap;
+        }
+
+        .editable { cursor: pointer; transition: background 0.15s; border-radius: 4px; }
+        .editable:hover { background: rgba(59, 130, 246, 0.15); }
+        
+        /* Modal */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); 
+            backdrop-filter: blur(4px); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 100; 
+            padding: 15px;
+        }
+        .modal-content { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            padding: 25px; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 550px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        .modal-content h3 { margin-top: 0; color: #fff; font-size: 1.1rem; }
+        .modal-content textarea, .modal-content input { 
+            width: 100%; 
+            background: #0b0f19; 
+            border: 1px solid var(--border); 
+            color: white; 
+            border-radius: 8px; 
+            padding: 12px; 
+            margin-top: 10px; 
+            font-size: 0.95rem; 
+            font-family: inherit;
+        }
+        .modal-content textarea:focus, .modal-content input:focus { outline: none; border-color: var(--accent); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+        .btn { background: var(--accent); color: white; border: none; padding: 9px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+        .btn-secondary:hover { color: #fff; border-color: var(--text-muted); }
+
+        #loadingIndicator { text-align: center; padding: 30px; color: var(--accent); font-weight: 600; }
+        footer { text-align: center; padding: 25px; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 30px; }
+
+        @media print {
+            body { background: #fff; color: #000; }
+            header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+            header h1 { color: #000; }
+            .filter-bar, .controls-bar, .stats-bar { display: none; }
+            .table-responsive { max-height: none; border: none; box-shadow: none; }
+            th { background: #eee !important; color: #000 !important; border: 1px solid #000; }
+            td { border: 1px solid #ccc; color: #000; }
+            .badge-opstina { border: 1px solid #000; color: #000; background: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+    <header>
+        <h1>🏛️ INO BiH — Terenski Ured Sarajevo</h1>
+        <p>Pregled do sada izvršenih ekshumacija, obdukcija i identifikacija tijela ubijenih građana iz pojedinačnih i masovnih grobnica</p>
+    </header>
+
+    <div class="container">
+        <!-- Statistika -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <span class="stat-title">Prikazanih grobnica / lokacija</span>
+                <span class="stat-value" id="statLokacije">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">Ukupno ekshumiranih tijela (prikaz)</span>
+                <span class="stat-value" id="statTijela" style="color: var(--success);">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">Aktivna opština</span>
+                <span class="stat-value" id="statOpstina" style="font-size: 1.2rem; padding-top: 4px;">Sve opštine</span>
+            </div>
+        </div>
+
+        <!-- Filteri po opštinama -->
+        <div class="filter-bar" id="filterBar">
+            <button class="filter-btn active" onclick="setOpstina('SVE', this)">Sve opštine</button>
+            <button class="filter-btn" onclick="setOpstina('Vogošća', this)">Vogošća</button>
+            <button class="filter-btn" onclick="setOpstina('Novo Sarajevo', this)">Novo Sarajevo</button>
+            <button class="filter-btn" onclick="setOpstina('Novi Grad', this)">Novi Grad</button>
+            <button class="filter-btn" onclick="setOpstina('Ilidža', this)">Ilidža</button>
+            <button class="filter-btn" onclick="setOpstina('Hadžići', this)">Hadžići</button>
+            <button class="filter-btn" onclick="setOpstina('Ilijaš', this)">Ilijaš</button>
+        </div>
+
+        <!-- Tražilica -->
+        <div class="controls-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Pretraži po imenu žrtve, lokalitetu, broju rješenja ili komentaru..." onkeyup="applyFilters()">
+            <button class="btn-print" onclick="window.print()">🖨️ Ispiši / PDF</button>
+        </div>
+
+        <div id="loadingIndicator">⏳ Učitavanje podataka iz baze...</div>
+
+        <!-- Tabela -->
+        <div class="table-responsive" id="tableContainer" style="display: none;">
+            <table id="mainTable">
+                <thead>
+                    <tr>
+                        <th style="width: 110px;">Opština</th>
+                        <th style="width: 55px;">Br.</th>
+                        <th style="min-width: 180px;">Lokalitet grobnice</th>
+                        <th style="min-width: 150px;">Rješenje suda</th>
+                        <th style="min-width: 120px;">Datum i br. leševa</th>
+                        <th style="min-width: 110px;">Obdukcija</th>
+                        <th style="min-width: 260px;">Identifikacija žrtava</th>
+                        <th style="min-width: 130px;">Status žrtve</th>
+                        <th style="min-width: 240px;">Komentar</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL ZA UREĐIVANJE -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Uredi polje</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: -5px;">Izmjena se direktno sprema u Google Tabelu.</p>
+            <form id="editForm" method="GET" target="hidden_iframe" onsubmit="submitEdit()">
+                <input type="hidden" name="action" value="updateRecord">
+                <input type="hidden" name="uid" id="modalUid">
+                <input type="hidden" name="kolona" id="modalKolona">
+                
+                <div id="inputContainer"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Otkaži</button>
+                    <button type="submit" class="btn">Spremi izmjenu 💾</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>Institut za nestale osobe BiH — Terenski ured Sarajevo | Istražitelj Mirza Saračević</p>
+    </footer>
+
+    <script>
+        // ZALIJEPI SVOJ WEB APP URL IZ GOOGLE APPS SCRIPT-A OVDJE:
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzw-vebcCvVrvgeInJrxeey2dWepfya4tubTfctOfQXcBfGvigSlp86kgCcTymhW3kq/exec";
+        
+        let globalData = [];
+        let trenutnaOpstina = "SVE";
+
+        function loadData() {
+            fetch(SCRIPT_URL)
+                .then(res => res.json())
+                .then(data => {
+                    globalData = data;
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    document.getElementById('tableContainer').style.display = 'block';
+                    applyFilters();
+                })
+                .catch(err => {
+                    document.getElementById('loadingIndicator').innerText = "❌ Greška pri učitavanju podataka. Provjeri SCRIPT_URL.";
+                });
+        }
+
+        function setOpstina(opstina, btnElement) {
+            trenutnaOpstina = opstina;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+            document.getElementById('statOpstina').innerText = opstina === "SVE" ? "Sve opštine" : opstina;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let query = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            let filtered = globalData.filter(item => {
+                let matchOpstina = (trenutnaOpstina === "SVE") || (String(item.opstina).toLowerCase() === trenutnaOpstina.toLowerCase());
+                if (!matchOpstina) return false;
+
+                if (!query) return true;
+                return (
+                    String(item.lokalitet).toLowerCase().includes(query) ||
+                    String(item.identifikacija).toLowerCase().includes(query) ||
+                    String(item.rjesenje).toLowerCase().includes(query) ||
+                    String(item.komentar).toLowerCase().includes(query) ||
+                    String(item.opstina).toLowerCase().includes(query) ||
+                    String(item.br).toLowerCase().includes(query)
+                );
+            });
+
+            renderTable(filtered);
+            updateStats(filtered);
+        }
+
+        function updateStats(data) {
+            document.getElementById('statLokacije').innerText = data.length;
+            
+            let ukupnoTijela = 0;
+            data.forEach(item => {
+                let match = String(item.datumBroj).match(/(\d+)\s*(leš|leša|leševa)/i);
+                if (match) {
+                    ukupnoTijela += parseInt(match[1], 10);
+                }
+            });
+            document.getElementById('statTijela').innerText = ukupnoTijela;
+        }
+
+        function renderTable(data) {
+            let tbody = document.querySelector('#mainTable tbody');
+            tbody.innerHTML = '';
+            
+            data.forEach(item => {
+                tbody.innerHTML += `<tr>
+                    <td><span class="badge-opstina">${item.opstina}</span></td>
+                    <td><strong>${item.br}</strong></td>
+                    <td class="editable" onclick="openModal('${item.uid}', 3, 'Lokalitet grobnice', '${escapeHtml(item.lokalitet)}')">${item.lokalitet}</td>
+                    <td class="editable" onclick="openModal('${item.uid}', 4, 'Rješenje suda', '${escapeHtml(item.rjesenje)}')">${item.rjesenje}</td>
+                    <td class="editable" onclick="openModal('${item.uid}', 5, 'Datum i broj leševa', '${escapeHtml(item.datumBroj)}')">${String(item.datumBroj).replace(/\n/g, '<br>')}</td>
+                    <td class="editable" onclick="openModal('${item.uid}', 6, 'Rezultati obdukcije', '${escapeHtml(item.obdukcija)}')">${String(item.obdukcija).replace(/\n/g, '<br>')}</td>
+                    <td class="editable" onclick="openModal('${item.uid}', 7, 'Identifikacija žrtava', '${escapeHtml(item.identifikacija)}')">${String(item.identifikacija).replace(/\n/g, '<br>')}</td>
+                    <td class="editable" onclick="openModal('${item.uid}', 8, 'Nacionalnost i status', '${escapeHtml(item.nacionalnost)}')">${item.nacionalnost}</td>
+                    <td class="editable" onclick="openModal('${item.uid}', 9, 'Komentar', '${escapeHtml(item.komentar)}')">${item.komentar}</td>
+                </tr>`;
+            });
+        }
+
+        function openModal(uid, kolonaIdx, nazivKolone, trenutnaVrijednost) {
+            document.getElementById('modalUid').value = uid;
+            document.getElementById('modalKolona').value = kolonaIdx;
+            document.getElementById('modalTitle').innerText = `Uredi: ${nazivKolone} (${uid})`;
+            
+            let unescaped = trenutnaVrijednost.replace(/&apos;/g, "'").replace(/&quot;/g, '"');
+            let container = document.getElementById('inputContainer');
+            
+            if (kolonaIdx === 7 || kolonaIdx === 9 || kolonaIdx === 5 || kolonaIdx === 3) {
+                container.innerHTML = `<textarea name="vrijednost" id="modalInputField" rows="5" required>${unescaped}</textarea>`;
+            } else {
+                container.innerHTML = `<input type="text" name="vrijednost" id="modalInputField" value="${escapeHtml(unescaped)}" required>`;
+            }
+
+            document.getElementById('editModal').style.display = 'flex';
+            document.getElementById('editForm').action = SCRIPT_URL;
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function submitEdit() {
+            let uid = document.getElementById('modalUid').value;
+            let kolonaIdx = Number(document.getElementById('modalKolona').value);
+            let novaVrijednost = document.getElementById('modalInputField').value;
+
+            // Odmah ažuriraj lokalni niz da se promjena vidi istog trena
+            let item = globalData.find(x => x.uid === uid);
+            if (item) {
+                const mapPolja = {
+                    3: 'lokalitet',
+                    4: 'rjesenje',
+                    5: 'datumBroj',
+                    6: 'obdukcija',
+                    7: 'identifikacija',
+                    8: 'nacionalnost',
+                    9: 'komentar'
+                };
+                if (mapPolja[kolonaIdx]) {
+                    item[mapPolja[kolonaIdx]] = novaVrijednost;
+                }
+            }
+
+            applyFilters();
+            setTimeout(() => { closeModal(); }, 300);
+        }
+
+        function escapeHtml(text) {
+            return String(text || "")
+                .replace(/&/g, "&amp;")
+                .replace(/'/g, "&apos;")
+                .replace(/"/g, "&quot;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
